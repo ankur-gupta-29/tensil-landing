@@ -1,6 +1,9 @@
 baseURL = "https://ankur-gupta-29.github.io/tensil-landing/"
 title = "Tensil"
 
+# Fix image paths for subdirectory deployment
+canonifyURLs = true
+
 # Language settings
 contentDir = "content/en"
 defaultContentLanguage = "en"
