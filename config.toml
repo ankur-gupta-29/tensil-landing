@@ -122,9 +122,9 @@ version = "1.0.3"
 url_latest_version = "https://www.tensil.ai/docs"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
-github_repo = "https://github.com/tensil-ai/tensil-landing"
+github_repo = "https://github.com/ankur-gupta-29/tensil-landing"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
-github_project_repo = "https://github.com/tensil-ai/tensil"
+github_project_repo = "https://github.com/ankur-gupta-29/tensil"
 
 # Specify a value here if your content directory is not in your repo's root directory
 # github_subdir = ""
@@ -201,7 +201,7 @@ enable = false
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
   name = "GitHub"
-  url = "https://github.com/tensil-ai/tensil"
+  url = "https://github.com/ankur-gupta-29/tensil"
   icon = "fab fa-github"
   desc = "Development takes place here!"
 # [[params.links.developer]]
@@ -213,8 +213,8 @@ enable = false
 
 [[menu.main]]
   name = " "
-  url = "https://github.com/tensil-ai/tensil"
-  pre = "<iframe src='https://ghbtns.com/github-btn.html?user=tensil-ai&repo=tensil&type=star&count=true&size=large' frameborder='0' scrolling='0' width='170' height='30' title='GitHub'></iframe>"
+  url = "https://github.com/ankur-gupta-29/tensil"
+  pre = "<iframe src='https://ghbtns.com/github-btn.html?user=ankur-gupta-29&repo=tensil&type=star&count=true&size=large' frameborder='0' scrolling='0' width='170' height='30' title='GitHub'></iframe>"
   weight = 1
 [[menu.main]]
   name = "Explorer"

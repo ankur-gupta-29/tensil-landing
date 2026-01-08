@@ -232,10 +232,10 @@ MAC efficiency (%):                              0.000
 
 Now it's time to put everything together on our development board. For this, we first need to set up the PYNQ environment. This process starts with downloading the [SD card image for our development board](http://www.pynq.io/board.html). There's the [detailed instruction](https://pynq.readthedocs.io/en/latest/getting_started/pynq_z1_setup.html) for setting board connectivity on the PYNQ documentation website. You should be able to open Jupyter notebooks and run some examples.
 
-Now that PYNQ is up and running, the next step is to `scp` the Tensil driver for PYNQ. Start by cloning the [Tensil GitHub repository](https://github.com/tensil-ai/tensil) to your work station and then copy `drivers/tcu_pynq` to `/home/xilinx/tcu_pynq` onto your board.
+Now that PYNQ is up and running, the next step is to `scp` the Tensil driver for PYNQ. Start by cloning the [Tensil GitHub repository](https://github.com/ankur-gupta-29/tensil) to your work station and then copy `drivers/tcu_pynq` to `/home/xilinx/tcu_pynq` onto your board.
 
 ```bash
-git clone git@github.com:tensil-ai/tensil.git
+git clone git@github.com:ankur-gupta-29/tensil.git
 scp -r tensil/drivers/tcu_pynq xilinx@192.168.2.99:
 ```
 

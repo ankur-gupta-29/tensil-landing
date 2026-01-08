@@ -12,7 +12,7 @@ description: >
 - a [compiled model]({{< relref "/docs/howto/compile" >}}) (e.g. the set of three files: `resnet20v2_cifar_onnx.tmodel`, `resnet20v2_cifar_onnx.tdata`, `resnet20v2_cifar_onnx.tprog`)
 - a fully implemented bitstream (`.bit`) and a hardware handoff file (`.hwh`): if you don't have these, learn how to [integrate the RTL]({{< relref "/docs/howto/integrate" >}})
 
-In this guide we'll assume you are using the [PYNQ](http://www.pynq.io/) execution environment, but we also support bare metal execution with our [embedded C driver](https://github.com/tensil-ai/tensil/tree/main/drivers/embedded). 
+In this guide we'll assume you are using the [PYNQ](http://www.pynq.io/) execution environment, but we also support bare metal execution with our [embedded C driver](https://github.com/ankur-gupta-29/tensil/tree/main/drivers/embedded). 
 
 ## 1. Move files onto the FPGA
 
@@ -35,10 +35,10 @@ Note that with PYNQ, the `.bit` and `.hwh` files must have the same name up to t
 
 ## 2. Copy the Python driver onto the FPGA
 
-If you haven't already cloned the repository, get the Tensil source code from [Github](https://github.com/tensil-ai/tensil/releases), e.g.
+If you haven't already cloned the repository, get the Tensil source code from [Github](https://github.com/ankur-gupta-29/tensil/releases), e.g.
 
 ```
-curl -L https://github.com/tensil-ai/tensil/archive/refs/tags/v1.0.0.tar.gz | tar xvz
+curl -L https://github.com/ankur-gupta-29/tensil/archive/refs/tags/v1.0.0.tar.gz | tar xvz
 ```
 
 Now copy the Python driver over:
@@ -49,7 +49,7 @@ $ scp -r tensil-1.0.0/drivers/tcu_pynq xilinx@192.168.2.99:~/
 
 ## 3. Execute
 
-Now it's time to hand everything over to the driver and tell it to execute the model. This guide will only cover the bare necessities for doing so, go here for a more [complete example](https://github.com/tensil-ai/tensil/blob/main/notebooks/Tensil%20TCU%20Demo%20-%20ResNet-20%20CIFAR.ipynb).
+Now it's time to hand everything over to the driver and tell it to execute the model. This guide will only cover the bare necessities for doing so, go here for a more [complete example](https://github.com/ankur-gupta-29/tensil/blob/main/notebooks/Tensil%20TCU%20Demo%20-%20ResNet-20%20CIFAR.ipynb).
 
 
 ### Import the Tensil driver

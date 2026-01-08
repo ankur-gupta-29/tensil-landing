@@ -100,10 +100,10 @@ rm image.ub
 sudo reboot
 ```
 
-Now that PYNQ is up and running, the next step is to `scp` the Tensil driver for PYNQ. Start by cloning the [Tensil GitHub repository](https://github.com/tensil-ai/tensil) to your work station and then copy `drivers/tcu_pynq` to `/home/xilinx/tcu_pynq` onto your board.
+Now that PYNQ is up and running, the next step is to `scp` the Tensil driver for PYNQ. Start by cloning the [Tensil GitHub repository](https://github.com/ankur-gupta-29/tensil) to your work station and then copy `drivers/tcu_pynq` to `/home/xilinx/tcu_pynq` onto your board.
 
 ```bash
-git clone git@github.com:tensil-ai/tensil.git
+git clone git@github.com:ankur-gupta-29/tensil.git
 scp -r tensil/drivers/tcu_pynq xilinx@192.168.3.1:
 ```
 
@@ -132,7 +132,7 @@ sudo pip install tflite_runtime-2.8.0-cp38-cp38-linux_aarch64.whl
 Finally, we will need the TF-Lite model to run the postprocessing in YOLO v4 Tiny. We prepared this model for you as well. We'll also need text labels for the COCO dataset used for training the YOLO model. Download these files into `/home/xilinx` by running these commands on the development board.
 
 ```bash
-wget https://github.com/tensil-ai/tensil-models/raw/main/yolov4_tiny_192_post.tflite
+wget https://github.com/ankur-gupta-29/tensil-models/raw/main/yolov4_tiny_192_post.tflite
 wget https://raw.githubusercontent.com/amikelive/coco-labels/master/coco-labels-2014_2017.txt
 ```
 

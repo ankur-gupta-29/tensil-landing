@@ -45,17 +45,17 @@ This chapter will provide a detailed overview of the principles of operation for
 
 ### Microphone acquisition
 
-The first stage of the sensor pipeline is acquisition of the numeric representation of the sound waveform. Such representation is characterized by the sampling rate. For a sampling rate of 16 KHz the acquisition will produce a number 16,000 times per second. The [ADCS7476 analog-to-digital converter](https://www.ti.com/lit/ds/symlink/adcs7476.pdf) is performing this sampling by turning the analog signal from the microphone to a 16-bit digital number. (It is really a 12-bit number with zero padding in most significant bits.) Since we are using the Arty board with Xilinx FPGA, the way to integrate various components in the Xilinx ecosystem is through the [AXI4 interface](https://en.wikipedia.org/wiki/Advanced_eXtensible_Interface). ADCS7476 converter supports a simple [SPI interface](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface), which we adapt to AXI4-Stream with a [little bit of Verilog](https://github.com/tensil-ai/speech-robot/blob/main/vivado/adcs747x_to_axism.v). Once converted to AXI4-Stream we can use [standard Xilinx components](https://docs.xilinx.com/v/u/en-US/pg060-floating-point) to convert from 16-bit integer to single precision (32-bit) floating point and then apply fused multiply-add operation in order to scale and offset the sample to be between -1 and 1. One additional function of the acquisition pipeline is to put samples together to form packets of a certain length. This length is 128 samples. Both normalization and the packet length are required by the next stage in the sensor pipeline described below.
+The first stage of the sensor pipeline is acquisition of the numeric representation of the sound waveform. Such representation is characterized by the sampling rate. For a sampling rate of 16 KHz the acquisition will produce a number 16,000 times per second. The [ADCS7476 analog-to-digital converter](https://www.ti.com/lit/ds/symlink/adcs7476.pdf) is performing this sampling by turning the analog signal from the microphone to a 16-bit digital number. (It is really a 12-bit number with zero padding in most significant bits.) Since we are using the Arty board with Xilinx FPGA, the way to integrate various components in the Xilinx ecosystem is through the [AXI4 interface](https://en.wikipedia.org/wiki/Advanced_eXtensible_Interface). ADCS7476 converter supports a simple [SPI interface](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface), which we adapt to AXI4-Stream with a [little bit of Verilog](https://github.com/ankur-gupta-29/speech-robot/blob/main/vivado/adcs747x_to_axism.v). Once converted to AXI4-Stream we can use [standard Xilinx components](https://docs.xilinx.com/v/u/en-US/pg060-floating-point) to convert from 16-bit integer to single precision (32-bit) floating point and then apply fused multiply-add operation in order to scale and offset the sample to be between -1 and 1. One additional function of the acquisition pipeline is to put samples together to form packets of a certain length. This length is 128 samples. Both normalization and the packet length are required by the next stage in the sensor pipeline described below.
 
 ![acquisition](/images/tutorials/speech-robot-part1/acquisition.svg)
 
 ### Speech commands ML model
 
-At the heart of our sensor pipeline is the machine learning model that given 1 second of sound data predicts if it contains a spoken command word. We based it loosely on [TensorFlow simple audio recognition tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). If you would like to understand how the model works we recommend reading through it. The biggest change from the original TensorFlow tutorial is using a much larger [speech commands dataset](https://www.tensorflow.org/datasets/catalog/speech_commands). This dataset extends the command classes to contain an unknown command and a silence. Both are important for distinguishing commands we are interested in from other sounds such as background noise. Another change is in the model structure. We added a down-convolution layer that effectively reduces the number of model parameters to make sure it fits the tight resources of Artix-7 FPGA. Lastly, once trained and saved, we convert the model to [ONNX format](https://onnx.ai/). You can look at the process of training the model in the [Jupyter notebook](https://github.com/tensil-ai/speech-robot/blob/main/model/speech_commands.ipynb). One more thing to note is that the model supports more commands that we will be using. To work around that the actual state machine component may ignore events for unsupported commands. (And we invite you to extend the robot to take advantage of all of the commands!)
+At the heart of our sensor pipeline is the machine learning model that given 1 second of sound data predicts if it contains a spoken command word. We based it loosely on [TensorFlow simple audio recognition tutorial](https://www.tensorflow.org/tutorials/audio/simple_audio). If you would like to understand how the model works we recommend reading through it. The biggest change from the original TensorFlow tutorial is using a much larger [speech commands dataset](https://www.tensorflow.org/datasets/catalog/speech_commands). This dataset extends the command classes to contain an unknown command and a silence. Both are important for distinguishing commands we are interested in from other sounds such as background noise. Another change is in the model structure. We added a down-convolution layer that effectively reduces the number of model parameters to make sure it fits the tight resources of Artix-7 FPGA. Lastly, once trained and saved, we convert the model to [ONNX format](https://onnx.ai/). You can look at the process of training the model in the [Jupyter notebook](https://github.com/ankur-gupta-29/speech-robot/blob/main/model/speech_commands.ipynb). One more thing to note is that the model supports more commands that we will be using. To work around that the actual state machine component may ignore events for unsupported commands. (And we invite you to extend the robot to take advantage of all of the commands!)
 
 To run this model on an FPGA we will use [Tensil](https://www.tensil.ai/). Tensil is an open source ML acceleration framework that will generate a hardware accelerator with a given set of parameters specifying the Tensil architecture. Tensil makes it very easy to compile ML models created with popular ML frameworks for running on this accelerator. There is a good [introductory tutorial]({{< relref "/docs/Tutorials/resnet20-pynqz1" >}}) that explains how to run a ResNet ML model on an FPGA with Tensil. It contains a detailed step-by-step description of building FPGA design for Tensil in [Xilinx Vivado](https://www.xilinx.com/products/design-tools/vivado.html) and later using it with the [PYNQ framework](http://www.pynq.io/). In this tutorial we will instead focus on system integration as well as aspects of running Tensil in a constrained embedded environment.
 
-For our purpose it is important to note that Tensil is a specialized processor–Tensil Compute Unit (TCU)–with its own [instruction set](https://www.tensil.ai/docs/reference/hardware/instruction-set/). Therefore we need to initialize it with the program binary (.tprog file). With the Tensil compiler we will compile the commands ONNX model, parametrized by the [Tensil architecture](https://github.com/tensil-ai/speech-robot/blob/main/arch/speech_robot.tarch), into a number of artifacts. The program binary is one of them.
+For our purpose it is important to note that Tensil is a specialized processor–Tensil Compute Unit (TCU)–with its own [instruction set](https://www.tensil.ai/docs/reference/hardware/instruction-set/). Therefore we need to initialize it with the program binary (.tprog file). With the Tensil compiler we will compile the commands ONNX model, parametrized by the [Tensil architecture](https://github.com/ankur-gupta-29/speech-robot/blob/main/arch/speech_robot.tarch), into a number of artifacts. The program binary is one of them.
 
 Another artifact produced by the compiler is the data binary (.tdata file) containing weights from the ML model adapted for running with Tensil. These two artifacts need to be placed in system DDR memory for TCU to be able to read them. One more artifact produced by the Tensil compiler is model description (.tmodel file). This file is usually consumed by the Tensil driver when there is a filesystem available (such as one on a SD card) in order to run the inference with a fewest lines of code.
 
@@ -65,7 +65,7 @@ The TCU dedicates two distinct memory areas in the DDR to data. One for variable
 
 ![tcu](/images/tutorials/speech-robot-part1/tcu.svg)
 
-You can take a look at the [model description](https://github.com/tensil-ai/speech-robot/blob/main/model/speech_commands_onnx_speech_robot.tmodel) produced by the Tensil compiler and at the corresponding TCU initialization steps in the [speech robot source code](https://github.com/tensil-ai/speech-robot/blob/main/vitis/speech_robot.c).
+You can take a look at the [model description](https://github.com/ankur-gupta-29/speech-robot/blob/main/model/speech_commands_onnx_speech_robot.tmodel) produced by the Tensil compiler and at the corresponding TCU initialization steps in the [speech robot source code](https://github.com/ankur-gupta-29/speech-robot/blob/main/vitis/speech_robot.c).
 
 ### Fourier transform
 
@@ -83,7 +83,7 @@ The speech commands model sets the STFT window length to 256 with a step of 128.
 
 ![acq_to_stft_packets](/images/tutorials/speech-robot-part1/acq_to_stft_packets.svg)
 
-We introduce [another bit of Verilog](https://github.com/tensil-ai/speech-robot/blob/main/vivado/window_to_axism.v) to provide a constant flow of Hann window packets to multiply with waveform packets from the acquisition pipeline.
+We introduce [another bit of Verilog](https://github.com/ankur-gupta-29/speech-robot/blob/main/vivado/window_to_axism.v) to provide a constant flow of Hann window packets to multiply with waveform packets from the acquisition pipeline.
 
 Finally, the STFT assembles together a number of packets into a frame. The height of this frame is the number of packets that were processed for a given spectrogram, which represents the time domain. Our speech commands model works on a 1 second long spectrogram, which allows for all supported one-word commands to fit. Given a 16 KHz sampling rate, an STFT window length of 256 samples, and a step of 128 samples we get 124 STFT packets that fit into 1 second.
 
@@ -117,7 +117,7 @@ Let’s summarize the main loop in the diagram below. The diagram also includes 
 
 ![loop](/images/tutorials/speech-robot-part1/loop.svg)
 
-You can look at the main loop in the [speech robot source code](https://github.com/tensil-ai/speech-robot/blob/main/vitis/speech_robot.c).
+You can look at the main loop in the [speech robot source code](https://github.com/ankur-gupta-29/speech-robot/blob/main/vitis/speech_robot.c).
 
 ## Assembling the bits
 
@@ -125,7 +125,7 @@ Now let's follow the steps to actually create all the bits necessary for running
 
 ### Speech commands model
 
-We’ve already mentioned the [Jupyter notebook](https://github.com/tensil-ai/speech-robot/blob/main/model/speech_commands.ipynb) with all necessary steps to download the speech commands dataset, train and test the model, and convert it to ONNX format. For dataset preprocessing you will need the ffprobe tool from the ffmpeg package on Debian/Ubuntu. Even though the model is not very large we suggest using GPU for training. We also put the resulting [speech commands model ONNX](https://github.com/tensil-ai/speech-robot/blob/main/model/speech_commands.onnx) file in the GitHub at the location where the Tensil compiler from the next section expects to find it.
+We’ve already mentioned the [Jupyter notebook](https://github.com/ankur-gupta-29/speech-robot/blob/main/model/speech_commands.ipynb) with all necessary steps to download the speech commands dataset, train and test the model, and convert it to ONNX format. For dataset preprocessing you will need the ffprobe tool from the ffmpeg package on Debian/Ubuntu. Even though the model is not very large we suggest using GPU for training. We also put the resulting [speech commands model ONNX](https://github.com/ankur-gupta-29/speech-robot/blob/main/model/speech_commands.onnx) file in the GitHub at the location where the Tensil compiler from the next section expects to find it.
 
 ### Tensil RTL and model
 
@@ -135,7 +135,7 @@ Next step is to produce the Register Transfer Level (RTL) representation of Tens
 docker pull tensilai/tensil
 ```
 
-Launch Tensil container in the directory containing our speech robot [GitHub repository](https://github.com/tensil-ai/speech-robot) by running.
+Launch Tensil container in the directory containing our speech robot [GitHub repository](https://github.com/ankur-gupta-29/speech-robot) by running.
 
 ```
 docker run -u $(id -u ${USER}):$(id -g ${USER}) -v $(pwd):/work -w /work -it tensilai/tensil bash
@@ -149,7 +149,7 @@ tensil rtl -a ./arch/speech_robot.tarch -d 128 -t vivado
 
 The RTL tool will produce 3 new Verilog (.v) files in the `vivado` directory: `top_speech_robot.v` contains the bulk of generated RTL for the TCU. `bram_dp_128x2048.v` and `bram_dp_128x8192.v` encapsulate RAM definitions to help Vivado to infer the BRAM. It will also produce `architecture_params.h` containing Tensil architecture definition in the form of a C header file. We will use it to initialize the TCU in the embedded application.
 
-All [4 files](https://github.com/tensil-ai/speech-robot/tree/main/vivado) are already included in the GitHub repository.
+All [4 files](https://github.com/ankur-gupta-29/speech-robot/tree/main/vivado) are already included in the GitHub repository.
 
 The final step in this section is to compile the ML model to produce the artifacts that TCU will use to run it. This is accomplished by running the following command. Again we use `-a` argument to point to Tensil architecture definition. We then use `-m` argument to point to speech commands model ONNX file, `-o` to specify the name of the output node in the ONNX graph (you can inspect this graph by opening the ONNX file in the [Netron](https://netron.app/)), and `-t` to specify the target directory.
 
@@ -159,7 +159,7 @@ tensil compile -a ./arch/speech_robot.tarch -m ./model/speech_commands.onnx -o "
 
 The compiler will produce program and data binaries (.tprog and .tdata files) along with the model description (.tmodel file). First two will be used in the step where we build a flash image file. Model description will provide us with important values to initialize the TCU in the embedded application.
 
-All [3 files](https://github.com/tensil-ai/speech-robot/tree/main/model) are also included in the GitHub repository.
+All [3 files](https://github.com/ankur-gupta-29/speech-robot/tree/main/model) are also included in the GitHub repository.
 
 ### Vivado bitstream
 
@@ -191,7 +191,7 @@ Click Next and Finish.
 
 Next we need to import the Block Design. This will instantiate and configure the RTL we imported and many standard Xilinx components such as MicroBlaze, FFT and the DDR controller. The script then will wire everything together. In our previous Tensil tutorials we included step-by-step instructions on how to build Block Design from ground up. It was possible because the design was relatively simple. For the speech robot the design is a lot more complex. To save time we exported it from Vivado as a TCL script, which we now need to import.
 
-To do this you will need to open the Vivado TCL console. (It should be one of the tabs at the bottom of the Vivado window.) Once in the console run the following command. Make sure to replace `/home/peter/Projects/speech-robot` with the path to the cloned [GitHub repository](https://github.com/tensil-ai/speech-robot).
+To do this you will need to open the Vivado TCL console. (It should be one of the tabs at the bottom of the Vivado window.) Once in the console run the following command. Make sure to replace `/home/peter/Projects/speech-robot` with the path to the cloned [GitHub repository](https://github.com/ankur-gupta-29/speech-robot).
 
 ```
 source /home/peter/Projects/speech-robot/vivado/speech_robot.tcl
@@ -225,13 +225,13 @@ Now it's time to synthesize the hardware. In the left-most pane click on Generat
 
 Once Vivado finishes its run, the last step is to create the XSA file. Click on the File menu and then click Export and Export Hardware. Make sure that the XSA file includes the bitstream.
 
-If you would like to skip the Vivado steps we included the [XSA file](https://github.com/tensil-ai/speech-robot/blob/main/vivado/speech_robot_wrapper.xsa) in the GitHub repository.
+If you would like to skip the Vivado steps we included the [XSA file](https://github.com/ankur-gupta-29/speech-robot/blob/main/vivado/speech_robot_wrapper.xsa) in the GitHub repository.
 
 ### Vitis embedded application
 
 In this section we will follow the steps to build the software for the speech robot. We will use the Tensil embedded driver to interact with the TCU and the Xilinx AXI DMA driver to interact with other acceleration pipelines.
 
-The entire application is contained in a single [source code file](https://github.com/tensil-ai/speech-robot/blob/main/vitis/speech_robot.c). The comments contain further details that are not covered here. We highly recommend browsing through this file so that the rest of the tutorial makes more sense.
+The entire application is contained in a single [source code file](https://github.com/ankur-gupta-29/speech-robot/blob/main/vitis/speech_robot.c). The comments contain further details that are not covered here. We highly recommend browsing through this file so that the rest of the tutorial makes more sense.
 
 Let’s start by launching the Vitis IDE which prompts us to create a new workspace. Lets call it `speech-robot-firmware`.
 
@@ -241,7 +241,7 @@ On the Vitis welcome page click Create Application Project. The first page of th
 
 ![vitis_project_1](/images/tutorials/speech-robot-part1/vitis_project_1.png)
 
-Now select Create a new platform from hardware (XSA) and select the location of the [XSA file](https://github.com/tensil-ai/speech-robot/blob/main/vivado/speech_robot_wrapper.xsa). Click Next.
+Now select Create a new platform from hardware (XSA) and select the location of the [XSA file](https://github.com/ankur-gupta-29/speech-robot/blob/main/vivado/speech_robot_wrapper.xsa). Click Next.
 
 ![vitis_project_2](/images/tutorials/speech-robot-part1/vitis_project_2.png)
 
@@ -272,7 +272,7 @@ cp speech-robot/vivado/architecture_params.h speech-robot-firmware/speech_robot/
 Next we need to clone Tensil repository and copy the embedded driver source code.
 
 ```
-git clone [https://github.com/tensil-ai/tensil](https://github.com/tensil-ai/tensil)
+git clone [https://github.com/ankur-gupta-29/tensil](https://github.com/ankur-gupta-29/tensil)
 cp -r tensil/drivers/embedded/tensil/ speech-robot-firmware/speech_robot/src/
 ```
 
@@ -286,13 +286,13 @@ Now that we have all source files in the right places lets compile and link our 
 
 This will generate an executable ELF file located in `speech_robot/Release/speech_robot.elf` under the Vitis workspace directory.
 
-If you would like to skip the Vitis steps we included the [ELF file](https://github.com/tensil-ai/speech-robot/blob/main/firmware/Release/speech_robot.elf) in the GitHub repository.
+If you would like to skip the Vitis steps we included the [ELF file](https://github.com/ankur-gupta-29/speech-robot/blob/main/firmware/Release/speech_robot.elf) in the GitHub repository.
 
 ### Quad-SPI flash image
 
 We now built both hardware (in the form of Vivado bitstream) and software (in the form of ELF executable file.) In this second to final section we will be combining them together with ML model artifacts to create the binary image for the flash memory.
 
-Firstly we need to update the bitstream with an ELF file containing our firmware. By default Vivado fills the Microblaze local memory with the default bootloader. To replace it go to the Tools menu and click Associate ELF files. Then click on the button with three dots and add the [ELF file](https://github.com/tensil-ai/speech-robot/blob/main/firmware/Release/speech_robot.elf) we produced in the previous section. Select it and click OK. Then click OK again.
+Firstly we need to update the bitstream with an ELF file containing our firmware. By default Vivado fills the Microblaze local memory with the default bootloader. To replace it go to the Tools menu and click Associate ELF files. Then click on the button with three dots and add the [ELF file](https://github.com/ankur-gupta-29/speech-robot/blob/main/firmware/Release/speech_robot.elf) we produced in the previous section. Select it and click OK. Then click OK again.
 
 ![vivado_elf](/images/tutorials/speech-robot-part1/vivado_elf.png)
 
@@ -318,7 +318,7 @@ Click OK to generate the flash image BIN file.
 
 ![vivado_bin](/images/tutorials/speech-robot-part1/vivado_bin.png)
 
-If you would like to skip all the way to programming we included the [BIN file](https://github.com/tensil-ai/speech-robot/blob/main/flash/speech_robot.bin) in the GitHub repository.
+If you would like to skip all the way to programming we included the [BIN file](https://github.com/ankur-gupta-29/speech-robot/blob/main/flash/speech_robot.bin) in the GitHub repository.
 
 ### Programming
 
@@ -330,7 +330,7 @@ Plug the Arty board into USB on your computer and then click Open Target under O
 
 If you skipped the previous section where we were creating the flash image BIN file you will need to add the configuration memory device in the Hardware Manager. To do this right-click on `xc7a100t_0` and then click Add Configuration Memory Device. Search for `s25fl128sxxxxxx0` and select the found part and click OK. If prompted to program the configuration memory device, click OK.
 
-Otherwise right-click on `s25fl128sxxxxxx0-spi-x1_x2_x4` and then click Program Configuration Memory Device. Enter the location of the flash image [BIN file](https://github.com/tensil-ai/speech-robot/blob/main/flash/speech_robot.bin).
+Otherwise right-click on `s25fl128sxxxxxx0-spi-x1_x2_x4` and then click Program Configuration Memory Device. Enter the location of the flash image [BIN file](https://github.com/ankur-gupta-29/speech-robot/blob/main/flash/speech_robot.bin).
 
 Click OK to program Arty flash.
 

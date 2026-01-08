@@ -42,4 +42,4 @@ Next up, try a [tutorial]({{< relref "/docs/tutorials" >}}) to learn how to use 
 ## For Contributors
 ### Installation from source
 
-See the project [README](https://github.com/tensil-ai/tensil#for-maintainers) for instructions on how to build from source.
+See the project [README](https://github.com/ankur-gupta-29/tensil#for-maintainers) for instructions on how to build from source.

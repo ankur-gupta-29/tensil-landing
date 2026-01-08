@@ -10,7 +10,7 @@ description: >
 
 ## Introduction
 
-Sometimes the application requires pushing the performance to its limits. In this tutorial we will show how to optimize [Tensil](https://www.tensil.ai/) running [ResNet20 trained on CIFAR](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/notebooks/resnet20v2_cifar.ipynb) for maximum performance. To do this, we will use the powerful [ZCU104](https://www.xilinx.com/products/boards-and-kits/zcu104.html) board and implement an embedded application to remove the overhead of running Linux OS and [PYNQ](http://www.pynq.io/). Importantly, we still won't quantize the model and use Tensil with 16-bit fixed point data type. We will demonstrate that running the CIFAR test data set shows very little accuracy drop when rounding down from the original 32-bit floating point.
+Sometimes the application requires pushing the performance to its limits. In this tutorial we will show how to optimize [Tensil](https://www.tensil.ai/) running [ResNet20 trained on CIFAR](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/notebooks/resnet20v2_cifar.ipynb) for maximum performance. To do this, we will use the powerful [ZCU104](https://www.xilinx.com/products/boards-and-kits/zcu104.html) board and implement an embedded application to remove the overhead of running Linux OS and [PYNQ](http://www.pynq.io/). Importantly, we still won't quantize the model and use Tensil with 16-bit fixed point data type. We will demonstrate that running the CIFAR test data set shows very little accuracy drop when rounding down from the original 32-bit floating point.
 
 ![board](/images/tutorials/resnet20-zcu104/board.jpg)
 
@@ -33,7 +33,7 @@ docker run \
     bash
 ```
 
-You will also need to clone the tutorial [GitHub repository](https://github.com/tensil-ai/tensil-zcu104-tutorial). It contains necessary source files as well as all of the intermediate artifacts in case you would like to skip running Tensil tools or Vivado.
+You will also need to clone the tutorial [GitHub repository](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial). It contains necessary source files as well as all of the intermediate artifacts in case you would like to skip running Tensil tools or Vivado.
 
 
 ## Baseline solution
@@ -49,13 +49,13 @@ Let’s start with generating Tensil RTL. Run the following command to generate 
 tensil rtl -a /demo/arch/zcu104.tarch -d 128 -s true -t vivado/baseline
 ```
 
-You can skip running the Tensil RTL tool and grab the baseline Verilog artifacts [here](https://github.com/tensil-ai/tensil-zcu104-tutorial/tree/main/vivado/baseline).
+You can skip running the Tensil RTL tool and grab the baseline Verilog artifacts [here](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/tree/main/vivado/baseline).
 
 Note that we need to specify the data width for AXI interfaces to be 128 bits, so that they fit directly with AXI ports on the ZYNQ UltraScale+ device at the heart of the ZCU104 board.
 
 Next, create the new Vivado RTL project, select the ZCU104 board and import the three Verilog files produced by the Tensil RTL command.
 
-We provide [scripted block design](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vivado/baseline/tensil_zcu104.tcl), so that you won’t need to connect blocks manually. You can use _Tools -> Run Tcl Script_ to run it. Once you have the design ready, right-click on `tensil_zcu104` in the _Design Sources_ pane and select _Create HDL Wrapper_. Let Vivado manage the wrapper. Once the wrapper is ready, right-click on `tensil_zcu104_wrapper` in the same _Design Sources_ pane and select _Set as Top_.
+We provide [scripted block design](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vivado/baseline/tensil_zcu104.tcl), so that you won’t need to connect blocks manually. You can use _Tools -> Run Tcl Script_ to run it. Once you have the design ready, right-click on `tensil_zcu104` in the _Design Sources_ pane and select _Create HDL Wrapper_. Let Vivado manage the wrapper. Once the wrapper is ready, right-click on `tensil_zcu104_wrapper` in the same _Design Sources_ pane and select _Set as Top_.
 
 Following is how the baseline block design looks like. Note the direct connections between Tensil block AXI masters and ZYNQ AXI slaves. The instruction AXI stream port is connected via AXI DMA block.
 
@@ -64,9 +64,9 @@ Following is how the baseline block design looks like. Note the direct connectio
 
 Next, click on _Generate Bitstream_ in the _Flow Navigator_ pane. Once bitstream is ready click on _File -> Export -> Export Hardware_. Make sure that _Include bitstream_ choice is selected. Now you have the XSA file containing everything necessary for Vitis to create the embedded application project.
 
-You can skip the Vivado implementation and grab the baseline XSA file [here](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vivado/baseline/tensil_zcu104_wrapper.xsa).
+You can skip the Vivado implementation and grab the baseline XSA file [here](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vivado/baseline/tensil_zcu104_wrapper.xsa).
 
-Another important result of running Vivado implementation is FPGA utilization. It is shown as one of the panes in the project summary once implementation is completed. The utilization is a direct function of our choice of [Tensil architecture](https://github.com/tensil-ai/tensil/blob/main/arch/zcu104.tarch).
+Another important result of running Vivado implementation is FPGA utilization. It is shown as one of the panes in the project summary once implementation is completed. The utilization is a direct function of our choice of [Tensil architecture](https://github.com/ankur-gupta-29/tensil/blob/main/arch/zcu104.tarch).
 
 ```json
 {
@@ -90,7 +90,7 @@ Specifying 32 by 32 systolic array size contributed to the high utilization of m
 
 ### ResNet compiled for Tensil
 
-The ZCU104 board supports an SD card interface. This allows us to use Tensil embedded driver file system functionality to read the ResNet model and a set of images to test it with. The set we will be using is the test set for the original [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html). The ResNet model is trained with the separate training and validation sets from the CIFAR-10. The test set is what the model hasn’t seen in training and therefore gives an objective estimate of its accuracy. The CIFAR-10 provides the test set of 10,000 images in several formats. We will use [the binary format](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/sdcard/test_batch.bin) that is more suitable for the embedded application.
+The ZCU104 board supports an SD card interface. This allows us to use Tensil embedded driver file system functionality to read the ResNet model and a set of images to test it with. The set we will be using is the test set for the original [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html). The ResNet model is trained with the separate training and validation sets from the CIFAR-10. The test set is what the model hasn’t seen in training and therefore gives an objective estimate of its accuracy. The CIFAR-10 provides the test set of 10,000 images in several formats. We will use [the binary format](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/sdcard/test_batch.bin) that is more suitable for the embedded application.
 
 Let’s start with compiling the ResNet ONNX file to Tensil model artifacts. The following command will produce `*.tmodel`, `*.tdata` and `*.tprog` files under the `sdcard/baseline/` directory. The `*.tmodel` file is a JSON-formatted description of the Tensil model, which references `*.tdata` (model weights) and `*.tprog` (model program for the Tensil processor.)
 
@@ -105,7 +105,7 @@ tensil compile \
 
 Once compiled, copy the content of the `sdcard` directory, which should also include the CIFAR-10 test data set (`test_batch.bin`) to the FAT-formatted SD card. Insert the card into the ZCU104 SD card slot. 
 
-You can skip the model compilation step and use the [`sdcard` directory](https://github.com/tensil-ai/tensil-zcu104-tutorial/tree/main/sdcard) in our GitHub repository.
+You can skip the model compilation step and use the [`sdcard` directory](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/tree/main/sdcard) in our GitHub repository.
 
 
 ### Tensil for Vitis embedded applications
@@ -128,7 +128,7 @@ Click on _Configuration_ dropdown and choose _All configurations_. Then, under _
 
 ![m](/images/tutorials/resnet20-zcu104/m.png)
 
-Now, let’s copy all necessary source files. For this you will need to clone the [tutorial GitHub repository](https://github.com/tensil-ai/tensil-zcu104-tutorial) as well as the [Tensil GitHub repository](https://github.com/tensil-ai/tensil) for the embedded driver sources. But first, let's copy architecture parameters for the embedded driver from the output artifacts of Tensil RTL tool.
+Now, let’s copy all necessary source files. For this you will need to clone the [tutorial GitHub repository](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial) as well as the [Tensil GitHub repository](https://github.com/ankur-gupta-29/tensil) for the embedded driver sources. But first, let's copy architecture parameters for the embedded driver from the output artifacts of Tensil RTL tool.
 
 ```bash
 cp \
@@ -164,7 +164,7 @@ With the SD card inserted and containing the CIFAR-10 test data set and the ResN
 
 ![truck](/images/tutorials/resnet20-zcu104/truck.png)
 
-After running the inference on the entire test data set the program will print the final average frames per second and the accuracy of the inference. For the baseline solution we are getting an average of 133.54 frames per second with 90% accuracy. Note that the accuracy we are seeing when testing the same [ResNet model with TensorFlow](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/notebooks/resnet20v2_cifar.ipynb) is 92%. The 2% drop is due to changing the data type from 32-bit floating point in TensorFlow to 16-bit fixed point in Tensil.
+After running the inference on the entire test data set the program will print the final average frames per second and the accuracy of the inference. For the baseline solution we are getting an average of 133.54 frames per second with 90% accuracy. Note that the accuracy we are seeing when testing the same [ResNet model with TensorFlow](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/notebooks/resnet20v2_cifar.ipynb) is 92%. The 2% drop is due to changing the data type from 32-bit floating point in TensorFlow to 16-bit fixed point in Tensil.
 
 ## Dual clock solution
 
@@ -180,11 +180,11 @@ First let’s use the `-d` argument in Tensil RTL command to generate the RTL wi
 tensil rtl -a /demo/arch/zcu104.tarch -d 512 -s true -t vivado/dual_clock
 ```
 
-The AXI SmartConnect block allows for both AXI width adjustment and separate clock domains. We change our block design by inserting these blocks in all three connections between Tensil RTL and the ZYNQ AXI ports. We suggest following the [steps above](#tensil-rtl-and-vivado-implementation) to create a new Vivado project for the dual clock design. Again, we provide [scripted block design](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vivado/dual_clock/tensil_zcu104.tcl), so that you won’t need to connect blocks manually. Following is how the dual clock block design looks like.
+The AXI SmartConnect block allows for both AXI width adjustment and separate clock domains. We change our block design by inserting these blocks in all three connections between Tensil RTL and the ZYNQ AXI ports. We suggest following the [steps above](#tensil-rtl-and-vivado-implementation) to create a new Vivado project for the dual clock design. Again, we provide [scripted block design](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vivado/dual_clock/tensil_zcu104.tcl), so that you won’t need to connect blocks manually. Following is how the dual clock block design looks like.
 
 [![dual_clock_design](/images/tutorials/resnet20-zcu104/dual_clock_design.png)](/images/tutorials/resnet20-zcu104/dual_clock_design.png)
 
-You can skip the Vivado implementation and grab the dual clock XSA file [here](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vivado/dual_clock/tensil_zcu104_wrapper.xsa).
+You can skip the Vivado implementation and grab the dual clock XSA file [here](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vivado/dual_clock/tensil_zcu104_wrapper.xsa).
 
 Let’s take a look at FPGA utilization for dual clock design. Note that the utilization for LUT, LUTRAM and FF has increased due to added AXI SmartConnect blocks and wider Tensil intefaces. BRAM and DSP utilization stayed the same since we did not change the Tensil architecture.
 
@@ -198,7 +198,7 @@ For the dual clock solution we are getting an average of 152.04 frames per secon
 
 The second optimization is based on the higher-end ZYNQ UltraScale+ devices support for another type of on-chip memory called Ultra RAM. By default, Vivado maps dual-port memory to Block RAM. In order for it to map to the Ultra RAM it needs hints in the Verilog code. To enable these hints we will use `--use-xilinx-ultra-ram` option of the Tensil RTL tool. The amount of Ultra RAM available on ZCU104 allows us to add around 48 KV memory in addition to 20 KV available through Block RAM.
 
-We start by creating a new [Tensil architecture](https://github.com/tensil-ai/tensil/blob/main/arch/zcu104_uram.tarch) for ZCU104 in which we allocate all of the Block RAM (20 KV) to accumulators and all of the Ultra RAM (48 KV) to local memory.
+We start by creating a new [Tensil architecture](https://github.com/ankur-gupta-29/tensil/blob/main/arch/zcu104_uram.tarch) for ZCU104 in which we allocate all of the Block RAM (20 KV) to accumulators and all of the Ultra RAM (48 KV) to local memory.
 
 ```json
 {
@@ -227,13 +227,13 @@ tensil rtl \
     -t vivado/ultra_ram
 ```
 
-You can also skip running the Tensil RTL tool and grab the Ultra RAM Verilog artifacts [here](https://github.com/tensil-ai/tensil-zcu104-tutorial/tree/main/vivado/ultra_ram).
+You can also skip running the Tensil RTL tool and grab the Ultra RAM Verilog artifacts [here](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/tree/main/vivado/ultra_ram).
 
-Follow the [steps above](#tensil-rtl-and-vivado-implementation) to create a new Vivado project for Ultra RAM solution. We provide [scripted block design](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vivado/ultra_ram/tensil_zcu104.tcl), so that you won’t need to connect blocks manually. Following is how the Ultra RAM block design looks like. Note, that we based it on the dual clock design and the only difference is in the Tensil RTL block.
+Follow the [steps above](#tensil-rtl-and-vivado-implementation) to create a new Vivado project for Ultra RAM solution. We provide [scripted block design](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vivado/ultra_ram/tensil_zcu104.tcl), so that you won’t need to connect blocks manually. Following is how the Ultra RAM block design looks like. Note, that we based it on the dual clock design and the only difference is in the Tensil RTL block.
 
 [![ultra_ram_design](/images/tutorials/resnet20-zcu104/ultra_ram_design.png)](/images/tutorials/resnet20-zcu104/ultra_ram_design.png)
 
-You can skip the Vivado implementation and grab the Ultra RAM XSA file [here](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vivado/ultra_ram/tensil_zcu104_wrapper.xsa).
+You can skip the Vivado implementation and grab the Ultra RAM XSA file [here](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vivado/ultra_ram/tensil_zcu104_wrapper.xsa).
 
 Now, let’s take a look at FPGA utilization for Ultra RAM design. Note that the utilization is mostly unchanged from the one of the dual clock design. The exception is the new line item for Ultra RAM (URAM), which we pushed to its full limit.
 
@@ -250,9 +250,9 @@ tensil compile \
     -t sdcard/ultra_ram/
 ```
 
-You can skip the model compilation step and use the `sdcard` [directory](https://github.com/tensil-ai/tensil-zcu104-tutorial/tree/main/sdcard) in our GitHub repository.
+You can skip the model compilation step and use the `sdcard` [directory](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/tree/main/sdcard) in our GitHub repository.
 
-We again, suggest you create a new Vitis workspace for the Ultra RAM design and follow the [steps above](#tensil-for-vitis-embedded-applications) to get the inference running. Make sure to uncomment the correct `MODEL_FILE_PATH` [definition](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vitis/main.c#L18) for the newly created `*.tmodel` file.
+We again, suggest you create a new Vitis workspace for the Ultra RAM design and follow the [steps above](#tensil-for-vitis-embedded-applications) to get the inference running. Make sure to uncomment the correct `MODEL_FILE_PATH` [definition](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vitis/main.c#L18) for the newly created `*.tmodel` file.
 
 For the Ultra RAM solution we are getting an average of 170.16 frames per second, another meaningful improvement. This improvement is based purely on having larger on-chip memory. With a small on-chip memory the Tensil compiler is forced to partition ResNet convolution layers into multiple load-compute-save blocks. This, in turn, requires that the same input activations are loaded multiple times, assuming weights are loaded only once. This is called weight-stationary dataflow. In the future, we will add an option for input-stationary dataflow. With it, when partitioned, the input activations are loaded once and the same weights are loaded multiple times.
 
@@ -294,9 +294,9 @@ tensil compile \
     -t sdcard/ultra_ram_local_vars/
 ```
 
-You can skip all of the model compilation steps in this section and use the `sdcard` [directory](https://github.com/tensil-ai/tensil-zcu104-tutorial/tree/main/sdcard) in our GitHub repository.
+You can skip all of the model compilation steps in this section and use the `sdcard` [directory](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/tree/main/sdcard) in our GitHub repository.
 
-This time, you can reuse the Vitis workspace for the Ultra RAM solution and simply uncomment the correct `MODEL_FILE_PATH` [definition](https://github.com/tensil-ai/tensil-zcu104-tutorial/blob/main/vitis/main.c#L18) for each newly created `*.tmodel` file.
+This time, you can reuse the Vitis workspace for the Ultra RAM solution and simply uncomment the correct `MODEL_FILE_PATH` [definition](https://github.com/ankur-gupta-29/tensil-zcu104-tutorial/blob/main/vitis/main.c#L18) for each newly created `*.tmodel` file.
 
 With the `local-vars` strategy we are getting an average of 214.66 frames per second.
 

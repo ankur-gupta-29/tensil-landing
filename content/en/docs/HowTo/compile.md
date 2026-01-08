@@ -90,7 +90,7 @@ so keep them handy. Assuming you have an accelerator built, you're now ready to 
 
 ## Troubleshooting
 
-If you got an error or saw something you didn't expect, please let us know! You can either join our [Discord](https://discord.gg/TSw34H3PXr) to ask a question, [open an issue on Github](https://github.com/tensil-ai/tensil/issues/new) or email us at [support@tensil.ai](mailto:support@tensil.ai).
+If you got an error or saw something you didn't expect, please let us know! You can either join our [Discord](https://discord.gg/TSw34H3PXr) to ask a question, [open an issue on Github](https://github.com/ankur-gupta-29/tensil/issues/new) or email us at [support@tensil.ai](mailto:support@tensil.ai).
 
 
 ### Converting to ONNX didn't work?

@@ -7,7 +7,7 @@ description: >
   Tensil is going open-source
 ---
 
-We're excited to announce Tensil v1.0.0 is released! To try it out, go to the [docs]({{< relref "/docs" >}}). If you like what we're doing, please give us a star on [Github](https://github.com/tensil-ai/tensil). Please join us on [Discord](https://discord.gg/TSw34H3PXr) to
+We're excited to announce Tensil v1.0.0 is released! To try it out, go to the [docs]({{< relref "/docs" >}}). If you like what we're doing, please give us a star on [Github](https://github.com/ankur-gupta-29/tensil). Please join us on [Discord](https://discord.gg/TSw34H3PXr) to
 say hello or ask a question.
 
 If you're wondering who we are and what we're doing, here's some information from our [About]({{< relref "/about" >}}) page:

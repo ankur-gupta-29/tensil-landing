@@ -240,10 +240,10 @@ rm image.ub
 sudo reboot
 ```
 
-Now that PYNQ is up and running, the next step is to `scp` the Tensil driver for PYNQ. Start by cloning the [Tensil GitHub repository](https://github.com/tensil-ai/tensil) to your work station and then copy `drivers/tcu_pynq` to `/home/xilinx/tcu_pynq` onto your board.
+Now that PYNQ is up and running, the next step is to `scp` the Tensil driver for PYNQ. Start by cloning the [Tensil GitHub repository](https://github.com/ankur-gupta-29/tensil) to your work station and then copy `drivers/tcu_pynq` to `/home/xilinx/tcu_pynq` onto your board.
 
 ```bash
-git clone git@github.com:tensil-ai/tensil.git
+git clone git@github.com:ankur-gupta-29/tensil.git
 scp -r tensil/drivers/tcu_pynq xilinx@192.168.3.1:
 ```
 
